@@ -12,6 +12,44 @@ Keep this up to date as you go — a few lines per work session is enough. It's 
 
 Copy this block for each session.
 
+### Session — 2026-11-25 — driver: project team
+
+- **Goal for this session:** Turn the starter template into a responsive digital wardrobe and outfit planner.
+- **Key prompts we gave Copilot** (paste the important ones):
+  1. Read the README and professor's project instructions, then build the requested fashion wardrobe website using the existing template and files.
+  2. Create a playful wardrobe with outfit generation, saved looks, storage locations, laundry tracking, sample pieces, and browser-local persistence.
+- **What worked:** Built the site in the existing HTML, CSS, and JavaScript files, with no libraries or installs. The sample closet is ready to try, and wardrobe changes are stored in the browser.
+- **Limitations:** A static site can't reliably import product photos from store pages or remove backgrounds automatically. The prototype accepts a direct image URL or a clean photo upload instead.
+- **Committed?** no
+
+### Session — 2026-11-25 — driver: project team
+
+- **Goal for this session:** Let multiple people keep separate closets when using the prototype on one browser.
+- **Key prompts we gave Copilot** (paste the important ones):
+  1. Add individual profiles with separate personal clothing and saved outfits.
+- **What worked:** Added local closet profiles with a profile switcher. Wardrobes, laundry status, and saved outfits are stored separately per profile; existing browser data is migrated into the first profile.
+- **Limitations:** These are browser-local profiles, not real accounts. There are no passwords, server, private access, or cross-device syncing, in keeping with the assignment rules.
+- **Committed?** no
+
+### Session — 2026-11-25 — driver: project team
+
+- **Goal for this session:** Start every new closet empty so people add their own clothing.
+- **Key prompts we gave Copilot** (paste the important ones):
+  1. Start the website with nothing in the closet so people can add their own stuff.
+- **What worked:** Removed the sample wardrobe. First-time visitors and newly created profiles now start with an empty closet, and the outfit generator invites them to add their own pieces. Existing saved wardrobe data is preserved.
+- **Committed?** no
+
+### Session — 2026-11-25 — driver: project team
+
+- **Goal for this session:** Demonstrate the course business concepts in the working website while preserving the closet features and aesthetic.
+- **Key prompts we gave Copilot** (paste the important ones):
+  1. Add live closet insights, a personal style profile that demonstrates growing value and switching costs, a fictional community inspiration simulation, a clear homepage pitch, and free/premium plan concepts.
+  2. Keep the prototype static and safe: no third-party libraries, real accounts, payments, or personal community data.
+- **What worked:** Added live clean/dirty/saved counts and wear rankings; a profile-scoped wear history and preference-guided style profile; fictional community posts with local-only likes and simulated sharing; a clearer customer/problem/solution pitch; and an illustrative free/premium plan page with a no-payment preview. Existing profiles keep separate data, and new profiles remain empty.
+- **Tests performed:** JavaScript syntax checks (`node --check app.js`, `node --check data.js`); `git diff --check`; browserless DOM smoke tests for empty first visit, dashboard counts and rankings, outfit preferences, wear history and laundry updates, saved outfit counts, community likes/sharing, plan preview, profile isolation, and internal navigation targets; static checks for duplicate HTML IDs, app lookups, and external asset/library references. All passed.
+- **Limitations:** Community activity and pricing are simulations stored in the browser; this static prototype does not publish posts, process payments, or provide real accounts.
+- **Committed?** no
+
 ### Session — [date] — driver: [first name]
 
 - **Goal for this session:**
