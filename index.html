@@ -8,16 +8,17 @@
   <title>Personal Fashion Show — your digital closet</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="signed-out">
   <header class="site-header">
     <a class="brand" href="#home" aria-label="Personal Fashion Show home">
       <span class="brand-mark" aria-hidden="true">✳</span>
       <span>personal <i>fashion</i> show</span>
     </a>
     <div class="profile-switcher">
-      <label class="sr-only" for="profile-select">Choose a closet profile</label>
-      <select id="profile-select" aria-label="Choose a closet profile"></select>
-      <button class="profile-add" id="add-profile" type="button" aria-label="Add a closet profile">＋</button>
+      <label class="sr-only" for="profile-select">Signed in as</label>
+      <select id="profile-select" aria-label="Signed in as"></select>
+      <button class="profile-add" id="add-profile" type="button" aria-label="Switch or add an account">＋</button>
+      <button class="sign-out-button" id="sign-out" type="button">Sign out</button>
     </div>
     <nav aria-label="Main navigation">
       <a href="#home">Home</a>
@@ -25,12 +26,13 @@
       <a href="#generator">Outfit Generator</a>
       <a href="#saved">Saved Outfits</a>
       <a href="#laundry">Laundry <span class="nav-count" id="laundry-count">0</span></a>
+      <a href="#community">Feed</a>
       <details class="nav-more">
-        <summary>Explore <span aria-hidden="true">⌄</span></summary>
+        <summary>Explore <span class="nav-count" id="request-count-badge" hidden>0</span> <span aria-hidden="true">⌄</span></summary>
         <div class="nav-menu">
           <a href="#insights">Closet Insights</a>
           <a href="#style">My Style Profile</a>
-          <a href="#community">Community Style</a>
+          <a href="#friends">Friends &amp; Account <span class="nav-count" id="request-count" hidden>0</span></a>
           <a href="#plans">Plans</a>
         </div>
       </details>
@@ -91,7 +93,7 @@
       <div class="home-rubric-links">
         <a href="#insights"><span aria-hidden="true">✦</span><strong>See your closet at a glance</strong><small>Live wardrobe and wear insights</small></a>
         <a href="#style"><span aria-hidden="true">♡</span><strong>Find your personal style</strong><small>Your preferences grow with your history</small></a>
-        <a href="#community"><span aria-hidden="true">✧</span><strong>Get inspired together</strong><small>A clearly labeled community simulation</small></a>
+        <a href="#community"><span aria-hidden="true">✧</span><strong>Get inspired together</strong><small>Public inspo plus your friends' everyday outfits</small></a>
         <a href="#plans"><span aria-hidden="true">☼</span><strong>Explore the business model</strong><small>Free wardrobe, optional premium styling</small></a>
       </div>
     </section>
@@ -162,11 +164,87 @@
 
     <section id="community" data-view hidden>
       <div class="page-heading">
-        <div><p class="eyebrow">A little inspiration goes a long way</p><h1>Community style <span aria-hidden="true">✧</span></h1><p class="muted">Fresh outfit ideas from a pretend community of closet rewearers.</p></div>
-        <a class="button button-soft" href="#saved">Share a saved look</a>
+        <div><p class="eyebrow">A little inspiration goes a long way</p><h1>Community feed <span aria-hidden="true">✧</span></h1><p class="muted">Public outfit inspiration from everyone, plus the everyday outfits your friends share only with friends.</p></div>
+        <div class="heading-actions">
+          <a class="button button-soft" href="#friends">Find friends</a>
+          <a class="button button-soft" href="#saved">Share a saved look</a>
+        </div>
       </div>
-      <div class="simulation-banner"><span aria-hidden="true">✦</span><p><strong>Prototype simulation:</strong> These people and outfits are fictional. Likes and shared looks only change this browser; no post is published or sent anywhere. A real community could make the idea feed more useful as more members join.</p></div>
+      <div class="simulation-banner"><span aria-hidden="true">✦</span><p><strong>Prototype simulation:</strong> Fictional members, plus any accounts made on this browser. Likes, posts, and friendships only change this browser; nothing is published or sent anywhere.</p></div>
+
+      <div class="feed-heading">
+        <h2>Friends' day-to-day outfits</h2>
+        <p class="muted">What your friends actually wore. Only their friends can see these, even from private accounts.</p>
+      </div>
+      <div class="community-grid" id="friends-feed-grid"></div>
+      <div class="feed-empty" id="friends-feed-empty" hidden>
+        <p id="friends-feed-empty-text">Add friends to see what they're wearing each day.</p>
+        <a class="button button-soft button-small" href="#friends">Find friends</a>
+      </div>
+
+      <div class="feed-heading">
+        <h2>Public outfit inspiration</h2>
+        <p class="muted">Looks shared by public accounts, plus looks from private accounts you're friends with.</p>
+      </div>
       <div class="community-grid" id="community-grid"></div>
+    </section>
+
+    <section id="friends" data-view hidden>
+      <div class="page-heading">
+        <div><p class="eyebrow">Getting dressed is better together</p><h1>Friends &amp; account <span aria-hidden="true">♡</span></h1><p class="muted">Choose who sees your looks, then add friends to see what they wear day to day.</p></div>
+        <a class="button button-soft" href="#community">Open the feed</a>
+      </div>
+      <div class="simulation-banner"><span aria-hidden="true">✦</span><p><strong>Prototype simulation:</strong> Accounts, emails, and friendships are saved only in this browser. There are no passwords and nothing is sent. Use a made-up email such as <em>yourname@example.com</em>. Fictional members accept requests right away; to try a real request, create a second account with ＋ and switch between them.</p></div>
+      <div class="friends-layout">
+        <form class="friends-card account-card" id="account-form" novalidate>
+          <p class="eyebrow">Your account</p>
+          <h2 id="account-heading">Your account</h2>
+          <label>Display name<input id="account-name" maxlength="32" required></label>
+          <label>Email<input id="account-email" type="email" maxlength="80" placeholder="yourname@example.com" autocomplete="off"><span class="field-help" id="account-email-help">Friends find you by this email.</span></label>
+          <fieldset class="privacy-choice">
+            <legend>Who can see the looks you share?</legend>
+            <label class="privacy-option"><input type="radio" name="account-visibility" value="public"><span><strong>Public</strong><small>Anyone can see looks you share to inspiration.</small></span></label>
+            <label class="privacy-option"><input type="radio" name="account-visibility" value="private"><span><strong>Private</strong><small>Only your friends can see looks you share.</small></span></label>
+          </fieldset>
+          <label class="check-option"><input type="checkbox" id="account-share-daily"><span>Share outfits I mark as worn with my friends</span></label>
+          <div class="account-actions">
+            <button class="button" type="submit">Save account</button>
+            <button class="button button-soft" id="account-sign-out" type="button">Sign out</button>
+          </div>
+          <p class="form-error" id="account-error" role="alert" hidden></p>
+        </form>
+        <div class="friends-column">
+          <form class="friends-card" id="find-friend-form" novalidate>
+            <p class="eyebrow">Find a friend</p>
+            <h2>Add by email</h2>
+            <div class="find-row">
+              <label class="sr-only" for="friend-email">Friend's email</label>
+              <input id="friend-email" type="email" maxlength="80" placeholder="friend@example.com" autocomplete="off">
+              <button class="button button-small" type="submit">Send request</button>
+            </div>
+            <p class="field-help">Try <em>noor@example.com</em>, a private fictional member.</p>
+            <p class="form-error" id="friend-error" role="alert" hidden></p>
+          </form>
+          <div class="friends-card">
+            <h2>Friend requests</h2>
+            <ul class="people-list" id="incoming-list"></ul>
+            <p class="muted people-empty" id="incoming-empty">No new requests.</p>
+            <h3>Sent and waiting</h3>
+            <ul class="people-list" id="outgoing-list"></ul>
+            <p class="muted people-empty" id="outgoing-empty">No pending requests.</p>
+          </div>
+          <div class="friends-card">
+            <h2>Your friends <span class="tag" id="friend-total">0</span></h2>
+            <ul class="people-list" id="friends-list"></ul>
+            <p class="muted people-empty" id="friends-empty">No friends yet. Add someone by email or from the suggestions below.</p>
+          </div>
+          <div class="friends-card">
+            <h2>People you may know</h2>
+            <ul class="people-list" id="suggested-list"></ul>
+            <p class="muted people-empty" id="suggested-empty">You're connected with everyone here.</p>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section id="plans" data-view hidden>
@@ -238,7 +316,7 @@
   <footer class="site-footer">
     <p><span aria-hidden="true">✦</span> Made for the joy of getting dressed.</p>
     <p>Student prototype for BSAD 281 at St. Francis Xavier University. Not a real company — all data is fictional.</p>
-    <p class="footer-note">Closet profiles are saved only in this browser; they are not secure accounts and don't sync between devices. Store images must be added by image URL; automatic store-image importing and background removal aren't available in this no-server prototype.</p>
+    <p class="footer-note">Accounts and friendships are saved only in this browser; they have no passwords, aren't secure, and don't sync between devices. Store images must be added by image URL; automatic store-image importing and background removal aren't available in this no-server prototype.</p>
   </footer>
 
   <dialog class="item-dialog" id="item-dialog" aria-labelledby="dialog-title">
@@ -265,16 +343,24 @@
   </dialog>
 
   <dialog class="profile-dialog" id="profile-dialog" aria-labelledby="profile-dialog-title">
-    <form id="profile-form">
+    <form id="profile-form" novalidate>
       <div class="dialog-heading">
-        <div><p class="eyebrow">A closet of your own</p><h2 id="profile-dialog-title">Add a profile</h2></div>
+        <div><p class="eyebrow" id="profile-dialog-eyebrow">A closet of your own</p><h2 id="profile-dialog-title">Sign in or join</h2></div>
         <button class="icon-button" id="close-profile-dialog" type="button" aria-label="Close">×</button>
       </div>
-      <label for="profile-name">Profile nickname<input id="profile-name" name="profileName" required maxlength="32" placeholder="e.g. Closet 2"></label>
-      <p class="profile-explanation">This makes a separate empty closet on this browser. Profiles are not real accounts: they have no password, and your closet is not synced or private from other people using this device.</p>
+      <label for="signin-email">Email<input id="signin-email" name="email" type="email" required maxlength="80" placeholder="yourname@example.com" autocomplete="off"></label>
+      <p class="field-help">Already have an account on this browser? Just enter its email to switch to it.</p>
+      <label for="claim-profile" id="claim-wrap" hidden>Closet for a new account<select id="claim-profile"></select><span class="field-help">This browser has a closet saved from before accounts. Keep it to link it to your email.</span></label>
+      <label for="profile-name">Display name <span class="optional">(new accounts)</span><input id="profile-name" name="profileName" maxlength="32" placeholder="e.g. Rachel"></label>
+      <fieldset class="privacy-choice">
+        <legend>Account privacy <span class="optional">(new accounts)</span></legend>
+        <label class="privacy-option"><input type="radio" name="signin-visibility" value="public"><span><strong>Public</strong><small>Anyone can see looks you share.</small></span></label>
+        <label class="privacy-option"><input type="radio" name="signin-visibility" value="private" checked><span><strong>Private</strong><small>Only friends can see looks you share.</small></span></label>
+      </fieldset>
+      <p class="profile-explanation">Prototype only: accounts live in this browser with no password, so anyone using this device can open them. Please use a made-up email, not your real one.</p>
       <div class="dialog-actions">
         <button class="button button-soft" id="cancel-profile-dialog" type="button">Cancel</button>
-        <button class="button" type="submit">Create profile</button>
+        <button class="button" type="submit">Continue</button>
       </div>
       <p class="form-error" id="profile-error" role="alert" hidden></p>
     </form>

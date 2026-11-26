@@ -59,6 +59,26 @@ Copy this block for each session.
 - **Tests performed:** `node --check app.js`, `node --check data.js`, and `git diff --check`; browserless functional smoke checks for legacy status migration, washable clothing auto-dirty behavior, accessory clean status, laundry/dashboard count updates, manual dirty/clean actions, and persisted washable flags. All passed.
 - **Committed?** no
 
+### Session — 2026-11-26 — driver: project team
+
+- **Goal for this session:** Add personal accounts with emails, friends, and public/private accounts, so people see public outfit inspo plus their friends' private day-to-day outfits.
+- **Key prompts we gave the AI:**
+  1. I want to make this website have personal accounts using people's emails. I want users to connect with friends. I want them to have an option of private or public accounts, where users can see public outfit inspo and their friends' private day-to-day outfits.
+- **What worked:** Closet profiles became email-based accounts (sign in or join from the ＋ button; existing closets carry over and can add an email). New Friends & Account page: display name, email, public/private setting, a "share worn outfits with friends" switch, add-by-email, friend requests (accept/decline/cancel), friends list, and suggestions. The Community page became a two-part feed: friends' day-to-day outfits (what they marked as worn, visible only to friends) and public inspiration (looks shared by public accounts, plus private friends' looks). Six fictional members (two private) accept requests instantly; requests between two accounts on the same browser need the other account to accept.
+- **Tests performed:** `node --check` on both scripts, `git diff --check`, duplicate-ID check, and a 36-step browserless DOM test covering sign-up/sign-in, email validation, friend requests, privacy rules, daily-outfit sharing, and data surviving a reload. All passed.
+- **Limitations:** No passwords, email verification, or server. Accounts and friendships live only in this browser, so anyone using the device can open any account. Use made-up emails only.
+- **Committed?** no
+
+### Session — 2026-11-26 — driver: project team
+
+- **Goal for this session:** Require sign-in before using the site, and add sign out.
+- **Key prompts we gave the AI:**
+  1. When someone opens the website and isn't signed in, show the "Sign in or join" box right away, before they can see or use anything else. They shouldn't be able to close it with the × or Cancel until they've made an account or signed in. Once they're signed in, don't show it again unless they sign out. Also add a "Sign out" button somewhere easy to find.
+- **What worked:** Visitors who aren't signed in see only the sign-in box. The page behind it is hidden, the × and Cancel are removed, and Escape doesn't close it. The browser remembers who is signed in, so the box doesn't come back until they press Sign out (in the header, or on the Friends & Account page). Closets saved before accounts existed can be linked to an email at sign-in so no clothes are lost.
+- **Tests performed:** `node --check`, `git diff --check`, and a 26-step browserless test of the gate, closing attempts, staying signed in after reload, both sign-out buttons, signing back in, and linking an old closet. All passed.
+- **Limitations:** Still no passwords. "Signed in" is only remembered by this browser, and anyone on the device can sign in to any account by typing its email.
+- **Committed?** no
+
 ### Session — [date] — driver: [first name]
 
 - **Goal for this session:**
@@ -83,7 +103,11 @@ Everything we wanted but faked or left out — real logins, a real database, pay
 
 | Feature we faked or skipped | Why a real company would need it | How hard / expensive? |
 |---|---|---|
-| | | |
+| Real email accounts and login | Accounts are stored in one browser with no password, so anyone on the device can open them and nothing syncs between phone and laptop. A real version needs sign-up with email verification, passwords or login links, and password reset. | Medium. A hosted login service (for example Firebase Auth or Auth0) is free to low-cost at small scale, plus a few weeks of developer time. |
+| Shared database for friends and feeds | Friends must see each other's outfits from their own devices. That needs a server database that stores friendships and posts and enforces who can see what (public vs. private, friends only). | Medium to high. Hosting is cheap early on (tens of dollars a month), but privacy rules need careful building and testing. |
+| Privacy, safety and moderation | Private daily outfits are personal. A real app needs privacy-law compliance (e.g. PIPEDA in Canada), blocking and reporting, account deletion, and moderation of public posts. | High. Ongoing legal advice and staff or paid moderation tools. |
+| Friend invites by email | When a friend hasn't joined, the prototype just says so. A real version would send them an invite email. | Low to medium. An email service costs a few dollars a month, plus spam and consent rules. |
+| Photo storage for outfit posts | Posts currently show emoji icons. Real users would want photos, which need cloud storage and image processing. | Medium. Storage costs grow with users. |
 
 ## Reflection (fill in at the end)
 

@@ -9,6 +9,8 @@
   const PREFERENCES_KEY = "petalThreadStylePreferencesV1";
   const LIKES_KEY = "petalThreadCommunityLikesV1";
   const SHARED_OUTFITS_KEY = "petalThreadSharedOutfitsV1";
+  const FRIENDSHIPS_KEY = "petalThreadFriendshipsV1";
+  const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const WASHABLE = ["Tops", "Bottoms", "Dresses", "Jackets and outerwear"];
   const SLOT_INFO = {
     dress: { label: "Dress", categories: ["Dresses"] },
@@ -92,29 +94,48 @@
 
   let profiles = readStorage(PROFILES_KEY, null);
   if (!Array.isArray(profiles) || !profiles.length) {
-    const defaultProfile = { id: "my-closet", name: "My closet" };
-    profiles = [defaultProfile];
+    profiles = [];
     const oldItems = readStorage(ITEMS_KEY, null);
     const oldOutfits = readStorage(OUTFITS_KEY, null);
-    writeStorage(profileStorageKey(ITEMS_KEY, defaultProfile.id), Array.isArray(oldItems) ? oldItems : emptyWardrobe());
-    writeStorage(profileStorageKey(OUTFITS_KEY, defaultProfile.id), Array.isArray(oldOutfits) ? oldOutfits : []);
-    writeStorage(PROFILES_KEY, profiles);
-    writeStorage(ACTIVE_PROFILE_KEY, defaultProfile.id);
+    if ((Array.isArray(oldItems) && oldItems.length) || (Array.isArray(oldOutfits) && oldOutfits.length)) {
+      // Keep a closet saved before profiles existed, so it can be attached to an account at sign-in.
+      const defaultProfile = { id: "my-closet", name: "My closet" };
+      profiles = [defaultProfile];
+      writeStorage(profileStorageKey(ITEMS_KEY, defaultProfile.id), Array.isArray(oldItems) ? oldItems : emptyWardrobe());
+      writeStorage(profileStorageKey(OUTFITS_KEY, defaultProfile.id), Array.isArray(oldOutfits) ? oldOutfits : []);
+      writeStorage(PROFILES_KEY, profiles);
+    }
   }
+  function normalizeAccount(profile) {
+    return Object.assign({}, profile, {
+      email: typeof profile.email === "string" ? profile.email.trim().toLowerCase() : "",
+      visibility: profile.visibility === "public" ? "public" : "private",
+      shareDaily: profile.shareDaily !== false
+    });
+  }
+
   profiles = profiles.filter(function (profile) {
     return profile && typeof profile.id === "string" && typeof profile.name === "string";
+  }).map(normalizeAccount);
+
+  let friendships = readStorage(FRIENDSHIPS_KEY, []);
+  if (!Array.isArray(friendships)) friendships = [];
+  friendships = friendships.filter(function (link) {
+    return link && typeof link.from === "string" && typeof link.to === "string" &&
+      (link.status === "pending" || link.status === "accepted");
   });
-  if (!profiles.length) profiles = [{ id: "my-closet", name: "My closet" }];
 
-  let activeProfileId = readStorage(ACTIVE_PROFILE_KEY, profiles[0].id);
-  if (!profiles.some(function (profile) { return profile.id === activeProfileId; })) activeProfileId = profiles[0].id;
+  // Signed in means this browser remembers an account that has an email.
+  let activeProfileId = readStorage(ACTIVE_PROFILE_KEY, null);
+  if (!profiles.some(function (profile) { return profile.id === activeProfileId && profile.email; })) activeProfileId = null;
+  const signedInAtStart = Boolean(activeProfileId);
 
-  let items = loadWardrobe(activeProfileId);
-  let savedOutfits = readStorage(profileStorageKey(OUTFITS_KEY, activeProfileId), []);
-  let wearHistory = readStorage(profileStorageKey(HISTORY_KEY, activeProfileId), []);
-  let stylePreferences = readStorage(profileStorageKey(PREFERENCES_KEY, activeProfileId), {});
-  let likedPostIds = readStorage(profileStorageKey(LIKES_KEY, activeProfileId), []);
-  let sharedOutfits = readStorage(profileStorageKey(SHARED_OUTFITS_KEY, activeProfileId), []);
+  let items = signedInAtStart ? loadWardrobe(activeProfileId) : [];
+  let savedOutfits = signedInAtStart ? readStorage(profileStorageKey(OUTFITS_KEY, activeProfileId), []) : [];
+  let wearHistory = signedInAtStart ? readStorage(profileStorageKey(HISTORY_KEY, activeProfileId), []) : [];
+  let stylePreferences = signedInAtStart ? readStorage(profileStorageKey(PREFERENCES_KEY, activeProfileId), {}) : {};
+  let likedPostIds = signedInAtStart ? readStorage(profileStorageKey(LIKES_KEY, activeProfileId), []) : [];
+  let sharedOutfits = signedInAtStart ? readStorage(profileStorageKey(SHARED_OUTFITS_KEY, activeProfileId), []) : [];
   if (!Array.isArray(items)) {
     items = [];
     showNotice("Your saved wardrobe couldn't be read. Add a new item to start a fresh closet.", true);
@@ -323,7 +344,7 @@
       wear.dataset.index = String(index);
       const alreadyShared = sharedOutfits.some(function (post) { return post.sourceOutfitId === outfit.id; });
       const share = createActionButton(
-        alreadyShared ? "Shared to inspiration ✓" : "Share to inspiration",
+        alreadyShared ? "Shared ✓" : activeAccount().visibility === "public" ? "Share publicly" : "Share with friends",
         "share-saved",
         "",
         "mini-button share-button"
@@ -422,40 +443,295 @@
     document.getElementById("wear-history-empty").hidden = wearHistory.length > 0;
   }
 
+  function activeAccount() {
+    return profiles.find(function (profile) { return profile.id === activeProfileId; }) || null;
+  }
+
+  function memberById(id) {
+    return COMMUNITY_MEMBERS.find(function (member) { return member.id === id; }) || null;
+  }
+
+  // A "person" is either a fictional member from data.js or an account made on this browser.
+  function personById(id) {
+    const member = memberById(id);
+    if (member) return { id: member.id, name: member.name, email: member.email, visibility: member.visibility, fictional: true };
+    const account = profiles.find(function (profile) { return profile.id === id; });
+    return account ? { id: account.id, name: account.name, email: account.email, visibility: account.visibility, fictional: false } : null;
+  }
+
+  function personByEmail(email) {
+    const wanted = email.trim().toLowerCase();
+    const member = COMMUNITY_MEMBERS.find(function (entry) { return entry.email === wanted; });
+    if (member) return personById(member.id);
+    const account = profiles.find(function (profile) { return profile.email && profile.email === wanted; });
+    return account ? personById(account.id) : null;
+  }
+
+  function friendshipBetween(a, b) {
+    return friendships.find(function (link) {
+      return (link.from === a && link.to === b) || (link.from === b && link.to === a);
+    }) || null;
+  }
+
+  function areFriends(a, b) {
+    const link = friendshipBetween(a, b);
+    return Boolean(link && link.status === "accepted");
+  }
+
+  function friendIdsOf(id) {
+    return friendships.filter(function (link) {
+      return link.status === "accepted" && (link.from === id || link.to === id);
+    }).map(function (link) { return link.from === id ? link.to : link.from; })
+      .filter(function (otherId) { return Boolean(personById(otherId)); });
+  }
+
+  function saveFriendships() {
+    return writeStorage(FRIENDSHIPS_KEY, friendships);
+  }
+
+  function relativeDay(time) {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const days = Math.max(0, Math.ceil((startOfToday.getTime() - time) / 86400000));
+    if (time >= startOfToday.getTime()) return "Today";
+    if (days <= 1) return "Yesterday";
+    if (days < 7) return days + " days ago";
+    return new Date(time).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  }
+
+  function inspirationPosts() {
+    const posts = [];
+    profiles.forEach(function (account) {
+      const isMe = account.id === activeProfileId;
+      if (!isMe && account.visibility !== "public" && !areFriends(activeProfileId, account.id)) return;
+      const shares = isMe ? sharedOutfits : readStorage(profileStorageKey(SHARED_OUTFITS_KEY, account.id), []);
+      if (!Array.isArray(shares)) return;
+      shares.forEach(function (post) {
+        posts.push(Object.assign({}, post, { name: account.name, audience: account.visibility, own: isMe }));
+      });
+    });
+    COMMUNITY_POSTS.forEach(function (post) {
+      const member = memberById(post.memberId);
+      if (!member) return;
+      if (member.visibility !== "public" && !areFriends(activeProfileId, member.id)) return;
+      posts.push(Object.assign({}, post, { name: member.name, audience: member.visibility, own: false }));
+    });
+    return posts;
+  }
+
+  function friendDailyPosts() {
+    const posts = [];
+    friendIdsOf(activeProfileId).forEach(function (friendId) {
+      const member = memberById(friendId);
+      if (member) {
+        (member.dailyOutfits || []).forEach(function (outfit) {
+          posts.push(Object.assign({}, outfit, {
+            name: member.name,
+            time: Date.now() - (Number(outfit.daysAgo) || 0) * 86400000,
+            audience: "friends"
+          }));
+        });
+        return;
+      }
+      const account = profiles.find(function (profile) { return profile.id === friendId; });
+      if (!account || !account.shareDaily) return;
+      const history = readStorage(profileStorageKey(HISTORY_KEY, account.id), []);
+      if (!Array.isArray(history)) return;
+      history.filter(function (entry) { return entry && entry.id && entry.sharedWithFriends; }).forEach(function (entry) {
+        posts.push({
+          id: entry.id,
+          name: account.name,
+          caption: entry.vibe ? "Feeling " + entry.vibe + " today." : "Today's closet pick.",
+          pieces: entry.itemNames || [],
+          icons: entry.icons || [],
+          color: entry.color,
+          likes: 0,
+          time: Number(entry.time) || Date.now(),
+          audience: "friends"
+        });
+      });
+    });
+    return posts.sort(function (a, b) { return b.time - a.time; });
+  }
+
+  function renderPostCard(post, kind) {
+    const card = make("article", "community-post");
+    const heading = make("div", "community-author");
+    const avatar = make("span", "community-avatar", post.name.slice(0, 1));
+    avatar.setAttribute("aria-hidden", "true");
+    heading.append(avatar, make("div", "", post.name + (post.own ? " (you)" : "")));
+    const badgeText = kind === "daily" ? "Friends only" : post.audience === "public" ? "Public" : "Friends only";
+    heading.appendChild(make("span", "audience-tag" + (badgeText === "Public" ? " audience-public" : ""), badgeText));
+    const art = make("div", "community-art");
+    art.style.backgroundColor = post.color && CSS.supports("color", post.color) ? post.color : "#f6e8df";
+    (post.icons || []).slice(0, 4).forEach(function (icon) {
+      art.appendChild(make("span", "community-piece-icon", icon));
+    });
+    const text = make("div", "community-post-copy");
+    text.append(make("h2", "", kind === "daily" ? "Wore this · " + relativeDay(post.time) : post.title), make("p", "", post.caption));
+    const labels = make("div", "community-piece-labels");
+    (post.pieces || []).forEach(function (piece) {
+      labels.appendChild(make("span", "tag", piece));
+    });
+    const liked = likedPostIds.includes(post.id);
+    const like = createActionButton(
+      (liked ? "♥ Liked · " : "♡ Like · ") + ((Number(post.likes) || 0) + (liked ? 1 : 0)),
+      "toggle-like",
+      "",
+      "mini-button like-button",
+      liked
+    );
+    like.dataset.postId = post.id;
+    card.append(heading, art, text, labels, like);
+    return card;
+  }
+
   function renderCommunity() {
     const grid = document.getElementById("community-grid");
-    grid.replaceChildren();
-    const posts = COMMUNITY_POSTS.concat(sharedOutfits);
-    posts.forEach(function (post) {
-      const card = make("article", "community-post");
-      const heading = make("div", "community-author");
-      const avatar = make("span", "community-avatar", post.name.slice(0, 1));
-      avatar.setAttribute("aria-hidden", "true");
-      heading.append(avatar, make("div", "", post.name));
-      if (post.shared) heading.appendChild(make("span", "prototype-tag", "Your preview"));
-      const art = make("div", "community-art");
-      art.style.backgroundColor = post.color || "#f6e8df";
-      (post.icons || []).slice(0, 4).forEach(function (icon) {
-        art.appendChild(make("span", "community-piece-icon", icon));
-      });
-      const text = make("div", "community-post-copy");
-      text.append(make("h2", "", post.title), make("p", "", post.caption));
-      const labels = make("div", "community-piece-labels");
-      (post.pieces || []).forEach(function (piece) {
-        labels.appendChild(make("span", "tag", piece));
-      });
-      const liked = likedPostIds.includes(post.id);
-      const like = createActionButton(
-        (liked ? "♥ Liked · " : "♡ Like · ") + (Number(post.likes) + (liked ? 1 : 0)),
-        "toggle-like",
-        "",
-        "mini-button like-button",
-        liked
-      );
-      like.dataset.postId = post.id;
-      card.append(heading, art, text, labels, like);
-      grid.appendChild(card);
+    grid.replaceChildren.apply(grid, inspirationPosts().map(function (post) { return renderPostCard(post, "inspo"); }));
+
+    const daily = friendDailyPosts();
+    const dailyGrid = document.getElementById("friends-feed-grid");
+    dailyGrid.replaceChildren.apply(dailyGrid, daily.map(function (post) { return renderPostCard(post, "daily"); }));
+    document.getElementById("friends-feed-empty").hidden = daily.length > 0;
+    document.getElementById("friends-feed-empty-text").textContent = friendIdsOf(activeProfileId).length
+      ? "Your friends haven't shared any outfits yet. Check back after they get dressed!"
+      : "Add friends to see what they're wearing each day.";
+  }
+
+  function personRow(person, buttons, note) {
+    const row = make("li", "person-row");
+    const avatar = make("span", "community-avatar", person.name.slice(0, 1));
+    avatar.setAttribute("aria-hidden", "true");
+    const info = make("div", "person-info");
+    info.append(make("strong", "", person.name), make("small", "", note || person.email || "No email yet"));
+    const tag = make("span", "audience-tag" + (person.visibility === "public" ? " audience-public" : ""), person.visibility === "public" ? "Public" : "Private");
+    const actions = make("div", "person-actions");
+    buttons.forEach(function (button) { actions.appendChild(button); });
+    row.append(avatar, info, tag, actions);
+    return row;
+  }
+
+  function personButton(label, action, personId, className) {
+    const button = createActionButton(label, action, "", className || "mini-button");
+    button.dataset.personId = personId;
+    return button;
+  }
+
+  function renderFriends() {
+    const account = activeAccount();
+    if (!account) return;
+    document.getElementById("account-heading").textContent = account.name;
+    document.getElementById("account-name").value = account.name;
+    document.getElementById("account-email").value = account.email;
+    document.getElementById("account-email-help").textContent = account.email
+      ? "Friends find you by this email."
+      : "Add an email so friends can find you.";
+    document.querySelectorAll('input[name="account-visibility"]').forEach(function (radio) {
+      radio.checked = radio.value === account.visibility;
     });
+    document.getElementById("account-share-daily").checked = account.shareDaily;
+
+    const me = account.id;
+    const incoming = friendships.filter(function (link) { return link.status === "pending" && link.to === me && personById(link.from); });
+    const outgoing = friendships.filter(function (link) { return link.status === "pending" && link.from === me && personById(link.to); });
+    const friendIds = friendIdsOf(me);
+
+    function fill(listId, emptyId, rows) {
+      const list = document.getElementById(listId);
+      list.replaceChildren.apply(list, rows);
+      document.getElementById(emptyId).hidden = rows.length > 0;
+    }
+
+    fill("incoming-list", "incoming-empty", incoming.map(function (link) {
+      const person = personById(link.from);
+      return personRow(person, [
+        personButton("Accept", "accept-friend", person.id, "mini-button accept-button"),
+        personButton("Decline", "decline-friend", person.id, "mini-button mini-danger")
+      ], "Wants to be friends");
+    }));
+    fill("outgoing-list", "outgoing-empty", outgoing.map(function (link) {
+      const person = personById(link.to);
+      return personRow(person, [personButton("Cancel", "cancel-request", person.id)], "Waiting for them to accept");
+    }));
+    fill("friends-list", "friends-empty", friendIds.map(function (id) {
+      return personRow(personById(id), [personButton("Remove", "remove-friend", id, "mini-button mini-danger")]);
+    }));
+    document.getElementById("friend-total").textContent = String(friendIds.length);
+
+    const suggestions = COMMUNITY_MEMBERS.map(function (member) { return personById(member.id); })
+      .concat(profiles.filter(function (profile) { return profile.id !== me && profile.email; }).map(function (profile) { return personById(profile.id); }))
+      .filter(function (person) { return !friendshipBetween(me, person.id); });
+    fill("suggested-list", "suggested-empty", suggestions.map(function (person) {
+      return personRow(person, [personButton("Add friend", "add-friend", person.id, "mini-button accept-button")],
+        person.fictional ? "Fictional member" : "Account on this browser");
+    }));
+
+    const requestCount = incoming.length;
+    ["request-count", "request-count-badge"].forEach(function (id) {
+      const badge = document.getElementById(id);
+      badge.textContent = requestCount > 9 ? "9+" : String(requestCount);
+      badge.hidden = requestCount === 0;
+    });
+  }
+
+  function sendFriendRequest(personId) {
+    const person = personById(personId);
+    const me = activeProfileId;
+    if (!person || person.id === me) return;
+    const existing = friendshipBetween(me, person.id);
+    if (existing && existing.status === "accepted") {
+      showNotice("You and " + person.name + " are already friends.", false);
+      return;
+    }
+    if (existing && existing.to === me) {
+      respondToRequest(person.id, true);
+      return;
+    }
+    if (existing) {
+      showNotice("Your request to " + person.name + " is still waiting.", false);
+      return;
+    }
+    friendships.push({
+      id: randomId(),
+      from: me,
+      to: person.id,
+      status: person.fictional ? "accepted" : "pending",
+      time: Date.now()
+    });
+    const persisted = saveFriendships();
+    renderFriends();
+    renderCommunity();
+    if (!persisted) return;
+    showNotice(person.fictional
+      ? person.name + " accepted your request (fictional members accept right away). Their everyday outfits are now in your feed."
+      : "Request sent to " + person.name + ". Switch to their account to accept it.", false);
+  }
+
+  function respondToRequest(personId, accept) {
+    const link = friendships.find(function (entry) {
+      return entry.status === "pending" && entry.from === personId && entry.to === activeProfileId;
+    });
+    if (!link) return;
+    if (accept) link.status = "accepted";
+    else friendships = friendships.filter(function (entry) { return entry !== link; });
+    const persisted = saveFriendships();
+    renderFriends();
+    renderCommunity();
+    const person = personById(personId);
+    if (persisted && person) {
+      showNotice(accept ? "You and " + person.name + " are now friends." : "Request from " + person.name + " declined.", false);
+    }
+  }
+
+  function removeConnection(personId, message) {
+    const link = friendshipBetween(activeProfileId, personId);
+    if (!link) return;
+    friendships = friendships.filter(function (entry) { return entry !== link; });
+    const persisted = saveFriendships();
+    renderFriends();
+    renderCommunity();
+    if (persisted) showNotice(message, false);
   }
 
   function renderLaundry() {
@@ -476,13 +752,48 @@
 
   function renderProfiles() {
     const select = document.getElementById("profile-select");
-    select.replaceChildren.apply(select, profiles.map(function (profile) {
+    select.replaceChildren.apply(select, profiles.filter(function (profile) { return profile.email; }).map(function (profile) {
       const option = document.createElement("option");
       option.value = profile.id;
       option.textContent = profile.name;
       return option;
     }));
     select.value = activeProfileId;
+  }
+
+  function isSignedIn() {
+    return Boolean(activeAccount());
+  }
+
+  function updateSignedInState() {
+    document.body.classList.toggle("signed-out", !isSignedIn());
+  }
+
+  // Opens the sign-in box. When nobody is signed in it can't be dismissed.
+  function openSignIn() {
+    const dialogBox = document.getElementById("profile-dialog");
+    const required = !isSignedIn();
+    document.getElementById("profile-form").reset();
+    document.getElementById("profile-error").hidden = true;
+    document.getElementById("close-profile-dialog").hidden = required;
+    document.getElementById("cancel-profile-dialog").hidden = required;
+    document.getElementById("profile-dialog-eyebrow").textContent = required ? "Welcome to Personal Fashion Show" : "Switch or add an account";
+    const unclaimed = profiles.filter(function (profile) { return !profile.email; });
+    const claimSelect = document.getElementById("claim-profile");
+    claimSelect.replaceChildren(new Option("Start a new, empty closet", ""));
+    unclaimed.forEach(function (profile) { claimSelect.appendChild(new Option("Keep my saved closet: " + profile.name, profile.id)); });
+    document.getElementById("claim-wrap").hidden = unclaimed.length === 0;
+    if (!dialogBox.open) dialogBox.showModal();
+    document.getElementById("signin-email").focus();
+  }
+
+  function signOut() {
+    const account = activeAccount();
+    if (!account) return;
+    writeStorage(ACTIVE_PROFILE_KEY, null);
+    // Reload so nothing from the signed-out account stays on the page.
+    window.location.hash = "#home";
+    window.location.reload();
   }
 
   function switchProfile(profileId, silent) {
@@ -505,6 +816,7 @@
     stylePreferences = Object.assign({ vibe: "", color: "", category: "" }, stylePreferences);
     currentOutfit = null;
     lockedSlots = {};
+    updateSignedInState();
     renderAll();
     generateOutfit(true);
     if (!silent) {
@@ -513,23 +825,72 @@
     return persisted;
   }
 
-  function createProfile(event) {
+  function showFieldError(id, message) {
+    const error = document.getElementById(id);
+    error.textContent = message;
+    error.hidden = false;
+  }
+
+  function signInOrCreate(event) {
     event.preventDefault();
-    const nameInput = document.getElementById("profile-name");
-    const error = document.getElementById("profile-error");
-    const name = nameInput.value.trim();
-    error.hidden = true;
+    const email = document.getElementById("signin-email").value.trim().toLowerCase();
+    const name = document.getElementById("profile-name").value.trim();
+    const chosen = document.querySelector('input[name="signin-visibility"]:checked');
+    document.getElementById("profile-error").hidden = true;
+    if (!EMAIL_PATTERN.test(email)) {
+      showFieldError("profile-error", "Enter an email like yourname@example.com.");
+      return;
+    }
+    if (COMMUNITY_MEMBERS.some(function (member) { return member.email === email; })) {
+      showFieldError("profile-error", "That email belongs to a fictional demo member. Try a different made-up email.");
+      return;
+    }
+    const existing = profiles.find(function (profile) { return profile.email === email; });
+    if (existing) {
+      if (existing.id === activeProfileId) showNotice("You're already signed in as " + existing.name + ".", false);
+      else switchProfile(existing.id, true) && showNotice("Welcome back, " + existing.name + "!", false);
+      document.getElementById("profile-dialog").close();
+      return;
+    }
+    const claimId = document.getElementById("claim-wrap").hidden ? "" : document.getElementById("claim-profile").value;
+    const claimed = claimId && profiles.find(function (profile) { return profile.id === claimId && !profile.email; });
+    if (claimed) {
+      const newName = name || claimed.name;
+      if (profiles.some(function (profile) { return profile.id !== claimed.id && profile.name.toLowerCase() === newName.toLowerCase(); })) {
+        showFieldError("profile-error", "That display name is already used on this browser. Try a different one.");
+        return;
+      }
+      profiles = profiles.map(function (profile) {
+        return profile.id !== claimed.id ? profile : normalizeAccount(Object.assign({}, profile, {
+          name: newName,
+          email: email,
+          visibility: chosen ? chosen.value : "private"
+        }));
+      });
+      const claimSaved = writeStorage(PROFILES_KEY, profiles);
+      const claimSwitched = switchProfile(claimed.id, true);
+      document.getElementById("profile-dialog").close();
+      showNotice(claimSaved && claimSwitched
+        ? "Welcome, " + newName + "! Your saved closet is now linked to " + email + "."
+        : "You're signed in, but this browser couldn't save everything. Check browser storage and try again.", !(claimSaved && claimSwitched));
+      return;
+    }
     if (!name) {
-      error.textContent = "Add a nickname for this closet.";
-      error.hidden = false;
+      showFieldError("profile-error", "No account uses that email yet. Add a display name to create one.");
+      document.getElementById("profile-name").focus();
       return;
     }
     if (profiles.some(function (profile) { return profile.name.toLowerCase() === name.toLowerCase(); })) {
-      error.textContent = "That profile name is already in use. Try a different nickname.";
-      error.hidden = false;
+      showFieldError("profile-error", "That display name is already used on this browser. Try a different one.");
       return;
     }
-    const profile = { id: randomId(), name: name };
+    const profile = normalizeAccount({
+      id: randomId(),
+      name: name,
+      email: email,
+      visibility: chosen ? chosen.value : "private",
+      shareDaily: true
+    });
     profiles.push(profile);
     const profilesSaved = writeStorage(PROFILES_KEY, profiles);
     const itemsSaved = writeStorage(profileStorageKey(ITEMS_KEY, profile.id), emptyWardrobe());
@@ -538,18 +899,65 @@
     const preferencesSaved = writeStorage(profileStorageKey(PREFERENCES_KEY, profile.id), {});
     const likesSaved = writeStorage(profileStorageKey(LIKES_KEY, profile.id), []);
     const sharesSaved = writeStorage(profileStorageKey(SHARED_OUTFITS_KEY, profile.id), []);
-    nameInput.value = "";
-    document.getElementById("profile-dialog").close();
     const activeProfileSaved = switchProfile(profile.id, true);
+    document.getElementById("profile-dialog").close();
     const saved = profilesSaved && itemsSaved && outfitsSaved && historySaved &&
       preferencesSaved && likesSaved && sharesSaved && activeProfileSaved;
     showNotice(saved
-      ? "Your new closet profile is ready. Add personal pieces whenever you like."
-      : "This profile is available now, but the browser couldn't save all of it. Check browser storage and try again.", !saved);
+      ? "Welcome, " + profile.name + "! Your " + profile.visibility + " account is ready. Add pieces or find friends whenever you like."
+      : "This account is available now, but the browser couldn't save all of it. Check browser storage and try again.", !saved);
+  }
+
+  function saveAccountSettings(event) {
+    event.preventDefault();
+    document.getElementById("account-error").hidden = true;
+    const account = activeAccount();
+    const name = document.getElementById("account-name").value.trim();
+    const email = document.getElementById("account-email").value.trim().toLowerCase();
+    const chosen = document.querySelector('input[name="account-visibility"]:checked');
+    if (!name) {
+      showFieldError("account-error", "Add a display name.");
+      return;
+    }
+    if (profiles.some(function (profile) { return profile.id !== account.id && profile.name.toLowerCase() === name.toLowerCase(); })) {
+      showFieldError("account-error", "Another account on this browser already uses that name.");
+      return;
+    }
+    if (email && !EMAIL_PATTERN.test(email)) {
+      showFieldError("account-error", "Enter an email like yourname@example.com, or leave it blank.");
+      return;
+    }
+    if (email && personByEmail(email) && personByEmail(email).id !== account.id) {
+      showFieldError("account-error", "That email is already used by another account.");
+      return;
+    }
+    const visibilityChanged = chosen && chosen.value !== account.visibility;
+    profiles = profiles.map(function (profile) {
+      if (profile.id !== account.id) return profile;
+      return normalizeAccount(Object.assign({}, profile, {
+        name: name,
+        email: email,
+        visibility: chosen ? chosen.value : profile.visibility,
+        shareDaily: document.getElementById("account-share-daily").checked
+      }));
+    });
+    const persisted = writeStorage(PROFILES_KEY, profiles);
+    renderProfiles();
+    renderFriends();
+    renderCommunity();
+    renderSaved();
+    if (!persisted) return;
+    const updated = activeAccount();
+    showNotice(visibilityChanged
+      ? (updated.visibility === "public"
+        ? "Your account is now public. Looks you share can inspire everyone."
+        : "Your account is now private. Only friends can see the looks you share.")
+      : "Account saved.", false);
   }
 
   function renderAll() {
     renderProfiles();
+    renderFriends();
     renderWardrobe();
     renderSaved();
     renderLaundry();
@@ -712,10 +1120,17 @@
         statusSource: isWashableCategory(item.category) ? "worn" : item.statusSource
       });
     });
+    const account = activeAccount();
+    const firstTint = wornItems.find(function (item) { return CSS.supports("color", item.color || ""); });
     wearHistory.unshift({
+      id: randomId(),
+      time: Date.now(),
       date: new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }),
       itemNames: wornItems.map(function (item) { return item.name; }),
-      vibe: outfit.vibe || ""
+      icons: wornItems.map(iconForItem),
+      color: firstTint ? firstTint.color : "",
+      vibe: outfit.vibe || "",
+      sharedWithFriends: account.shareDaily
     });
     wearHistory = wearHistory.slice(0, 50);
     const itemsPersisted = writeStorage(profileStorageKey(ITEMS_KEY, activeProfileId), items);
@@ -723,7 +1138,8 @@
     reconcileCurrentOutfit();
     renderAll();
     if (itemsPersisted && historyPersisted) {
-      showNotice("Outfit worn! Your style history is updated and washable pieces are in the laundry.", false);
+      const sharedNote = account.shareDaily && friendIdsOf(account.id).length ? " Your friends can see it in their feed." : "";
+      showNotice("Outfit worn! Your style history is updated and washable pieces are in the laundry." + sharedNote, false);
     }
   }
 
@@ -919,9 +1335,8 @@
       const post = {
         id: randomId(),
         sourceOutfitId: outfit.id,
-        name: "Your closet",
-        title: "A look from your wardrobe",
-        caption: "A saved outfit from this closet. In a real community, little ideas like this could inspire another rewear.",
+        title: "A look from my wardrobe",
+        caption: "A saved outfit from my closet, ready for another rewear.",
         pieces: outfitItems.map(function (item) { return item.name; }),
         icons: outfitItems.map(iconForItem),
         color: firstTint ? firstTint.color : "#f6e8df",
@@ -934,7 +1349,9 @@
       renderCommunity();
       if (persisted) {
         window.location.hash = "#community";
-        showNotice("Shared to this browser's inspiration preview only.", false);
+        showNotice(activeAccount().visibility === "public"
+          ? "Shared to public inspiration (on this browser only)."
+          : "Shared with your friends. Your account is private, so only friends can see it.", false);
       }
     } else if (action === "toggle-like") {
       const postId = button.dataset.postId;
@@ -946,6 +1363,19 @@
       const persisted = writeStorage(profileStorageKey(LIKES_KEY, activeProfileId), likedPostIds);
       renderCommunity();
       if (persisted) showNotice("Your inspiration reaction is saved on this browser.", false);
+    } else if (action === "add-friend") {
+      sendFriendRequest(button.dataset.personId);
+    } else if (action === "accept-friend") {
+      respondToRequest(button.dataset.personId, true);
+    } else if (action === "decline-friend") {
+      respondToRequest(button.dataset.personId, false);
+    } else if (action === "cancel-request") {
+      const person = personById(button.dataset.personId);
+      removeConnection(button.dataset.personId, "Request to " + (person ? person.name : "them") + " cancelled.");
+    } else if (action === "remove-friend") {
+      const person = personById(button.dataset.personId);
+      if (!person || !window.confirm("Remove " + person.name + " from your friends?")) return;
+      removeConnection(person.id, person.name + " was removed from your friends.");
     } else if (action === "wear-current") {
       if (currentOutfit) markWorn(currentOutfit);
     } else if (action === "wear-saved") {
@@ -976,6 +1406,30 @@
   document.getElementById("outfit-board").addEventListener("click", onAction);
   document.getElementById("saved-grid").addEventListener("click", onAction);
   document.getElementById("community-grid").addEventListener("click", onAction);
+  document.getElementById("friends-feed-grid").addEventListener("click", onAction);
+  document.getElementById("friends").addEventListener("click", onAction);
+  document.getElementById("account-form").addEventListener("submit", saveAccountSettings);
+  document.getElementById("find-friend-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    const input = document.getElementById("friend-email");
+    const email = input.value.trim().toLowerCase();
+    document.getElementById("friend-error").hidden = true;
+    if (!EMAIL_PATTERN.test(email)) {
+      showFieldError("friend-error", "Enter your friend's email, like friend@example.com.");
+      return;
+    }
+    const person = personByEmail(email);
+    if (!person) {
+      showFieldError("friend-error", "No one with that email has joined yet. A real version would email them an invite.");
+      return;
+    }
+    if (person.id === activeProfileId) {
+      showFieldError("friend-error", "That's your own email!");
+      return;
+    }
+    input.value = "";
+    sendFriendRequest(person.id);
+  });
   document.getElementById("generate-outfit").addEventListener("click", function () { generateOutfit(); });
   document.getElementById("home-add").addEventListener("click", function () { openDialog(null); });
   function saveStylePreferences() {
@@ -1000,19 +1454,23 @@
   document.getElementById("profile-select").addEventListener("change", function (event) {
     switchProfile(event.target.value);
   });
-  document.getElementById("add-profile").addEventListener("click", function () {
-    document.getElementById("profile-error").hidden = true;
-    document.getElementById("profile-name").value = "";
-    document.getElementById("profile-dialog").showModal();
-    document.getElementById("profile-name").focus();
+  document.getElementById("add-profile").addEventListener("click", openSignIn);
+  document.getElementById("sign-out").addEventListener("click", signOut);
+  document.getElementById("account-sign-out").addEventListener("click", signOut);
+  document.getElementById("profile-dialog").addEventListener("cancel", function (event) {
+    if (!isSignedIn()) event.preventDefault();
+  });
+  document.getElementById("profile-dialog").addEventListener("close", function () {
+    // Browsers can force-close a dialog (e.g. pressing Escape twice); reopen it if still signed out.
+    if (!isSignedIn()) openSignIn();
   });
   document.getElementById("close-profile-dialog").addEventListener("click", function () {
-    document.getElementById("profile-dialog").close();
+    if (isSignedIn()) document.getElementById("profile-dialog").close();
   });
   document.getElementById("cancel-profile-dialog").addEventListener("click", function () {
-    document.getElementById("profile-dialog").close();
+    if (isSignedIn()) document.getElementById("profile-dialog").close();
   });
-  document.getElementById("profile-form").addEventListener("submit", createProfile);
+  document.getElementById("profile-form").addEventListener("submit", signInOrCreate);
   document.getElementById("clean-all").addEventListener("click", function () {
     items = items.map(function (item) {
       return Object.assign({}, item, { status: "clean", statusSource: "clean" });
@@ -1064,7 +1522,9 @@
   });
   window.addEventListener("hashchange", showView);
 
+  updateSignedInState();
   renderAll();
   showView();
-  if (items.length) generateOutfit();
+  if (!isSignedIn()) openSignIn();
+  else if (items.length) generateOutfit();
 })();
