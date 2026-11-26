@@ -329,8 +329,8 @@
       </div>
       <datalist id="location-options"><option value="Hanging in closet"><option value="First dresser drawer"><option value="Second dresser drawer"><option value="Shoe rack"><option value="Closet shelf"></datalist>
       <div class="form-row">
-        <label>Color<input id="item-color" name="color" type="text" maxlength="40" list="color-options" placeholder="e.g. blush pink, navy, #f6c9d5"></label>
-        <datalist id="color-options"><option value="Blush pink"><option value="Butter yellow"><option value="Sage green"><option value="Soft blue"><option value="Lilac"><option value="Warm tan"><option value="Cream"><option value="Taupe"></datalist>
+        <label>Color<span class="color-field"><span class="color-swatch swatch-unknown" id="item-color-swatch" aria-hidden="true"></span><input id="item-color" name="color" type="text" maxlength="40" list="color-options" placeholder="Type a colour, e.g. sage green" autocomplete="off"></span><span class="field-help">Just type the colour's name, like navy or blush pink.</span></label>
+        <datalist id="color-options"><option value="Black"><option value="White"><option value="Cream"><option value="Beige"><option value="Grey"><option value="Navy"><option value="Denim"><option value="Soft blue"><option value="Sage green"><option value="Olive"><option value="Blush pink"><option value="Red"><option value="Burgundy"><option value="Butter yellow"><option value="Mustard"><option value="Lilac"><option value="Camel"><option value="Brown"><option value="Warm tan"><option value="Taupe"></datalist>
         <label class="upload-label">Upload a photo<input id="item-file" name="photo" type="file" accept="image/*"><span class="field-help">Your photo stays on this device.</span></label>
       </div>
       <label>Product page link <span class="optional">(optional)</span><input id="product-link" name="productLink" type="url" placeholder="https://store.example/item"></label>

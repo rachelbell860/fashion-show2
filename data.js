@@ -12,6 +12,62 @@ const CATEGORIES = [
   "Other accessories"
 ];
 
+// Colour names people can type when adding clothing, and the tint shown for each.
+// Anything not listed here can still work if the browser knows it (e.g. "navy", "olive").
+const COLOR_NAMES = {
+  "blush pink": "#f6c9d5",
+  "pink": "#f4b6c8",
+  "hot pink": "#e9579a",
+  "dusty rose": "#d8a1a8",
+  "rose": "#e58fa3",
+  "red": "#d9534f",
+  "burgundy": "#7d2638",
+  "wine": "#722f37",
+  "coral": "#f08a72",
+  "peach": "#f9c9a7",
+  "orange": "#f0954b",
+  "rust": "#b5532c",
+  "butter yellow": "#f7e3a1",
+  "yellow": "#f4d35e",
+  "mustard": "#d4a72c",
+  "sage green": "#b7c9a8",
+  "sage": "#b7c9a8",
+  "mint": "#bfe6d2",
+  "green": "#6aa36f",
+  "olive": "#7b7c3a",
+  "forest green": "#2f5d3a",
+  "khaki": "#c3b091",
+  "soft blue": "#b9d2ea",
+  "baby blue": "#bcdcf3",
+  "light blue": "#add8e6",
+  "blue": "#4a7cc4",
+  "denim": "#5b7fa6",
+  "navy": "#22325a",
+  "teal": "#2f8f8a",
+  "lilac": "#d9c6e8",
+  "lavender": "#cdbfe6",
+  "purple": "#8a5aa8",
+  "plum": "#7a3e65",
+  "warm tan": "#d2a679",
+  "tan": "#d2b48c",
+  "camel": "#c19a6b",
+  "beige": "#e8d9c0",
+  "cream": "#f5ecd9",
+  "ivory": "#f8f3e6",
+  "white": "#ffffff",
+  "taupe": "#a89a8c",
+  "brown": "#7b5137",
+  "chocolate": "#5a3825",
+  "grey": "#a3a3a3",
+  "gray": "#a3a3a3",
+  "light grey": "#d3d3d3",
+  "light gray": "#d3d3d3",
+  "charcoal": "#45474d",
+  "black": "#2b2b2b",
+  "silver": "#c7c9cc",
+  "gold": "#d4af37"
+};
+
 // Fictional community members. Emails use example.com so no real address is ever stored.
 // Public members' shared looks appear for everyone; private members' looks only appear for friends.
 // "dailyOutfits" are what each member actually wore — only their friends can see these.

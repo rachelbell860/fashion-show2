@@ -175,8 +175,40 @@
     return element;
   }
 
+  // Turns what someone typed ("Sage green", "navy", "dark olive", "#f6c9d5") into a colour the page can show.
+  function colorToCss(value) {
+    const typed = String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+    if (!typed) return "";
+    if (COLOR_NAMES[typed]) return COLOR_NAMES[typed];
+    if (CSS.supports("color", typed)) return typed;
+    if (CSS.supports("color", typed.replace(/ /g, ""))) return typed.replace(/ /g, "");
+    // Fall back to the last word we recognise, so "dark olive" or "pale pink" still get a tint.
+    const words = typed.split(" ");
+    for (let i = words.length - 1; i >= 0; i -= 1) {
+      if (COLOR_NAMES[words[i]]) return COLOR_NAMES[words[i]];
+      if (/^[a-z]+$/.test(words[i]) && CSS.supports("color", words[i])) return words[i];
+    }
+    return "";
+  }
+
+  // Shows a saved colour code by its name when it's one of ours, so people see words, not codes.
+  function colorLabel(value) {
+    const saved = String(value || "").trim();
+    if (!saved.startsWith("#")) return saved;
+    const name = Object.keys(COLOR_NAMES).find(function (key) { return COLOR_NAMES[key].toLowerCase() === saved.toLowerCase(); });
+    return name ? name.charAt(0).toUpperCase() + name.slice(1) : saved;
+  }
+
+  function updateColorSwatch() {
+    const swatch = document.getElementById("item-color-swatch");
+    const css = colorToCss(document.getElementById("item-color").value);
+    swatch.style.background = css || "";
+    swatch.classList.toggle("swatch-unknown", !css);
+    swatch.title = css ? "Colour preview" : "We don't recognise that colour yet; the item will use a soft default tint.";
+  }
+
   function setImage(visual, item) {
-    const color = item.color && CSS.supports("color", item.color) ? item.color : "#f6c9d5";
+    const color = colorToCss(item.color) || "#f6c9d5";
     visual.style.setProperty("--item-tint", color);
     if (item.image) {
       const image = document.createElement("img");
@@ -1005,7 +1037,8 @@
     });
     const preferredColor = (stylePreferences.color || "").trim().toLowerCase();
     const matchingColor = preferredColor ? candidates.filter(function (item) {
-      return String(item.color || "").toLowerCase().includes(preferredColor);
+      return colorLabel(item.color).toLowerCase().includes(preferredColor) ||
+        (colorToCss(preferredColor) && colorToCss(item.color) === colorToCss(preferredColor));
     }) : [];
     const colorCandidates = matchingColor.length ? matchingColor : candidates;
     const styled = colorCandidates.filter(function (item) { return (item.vibes || []).indexOf(vibe) !== -1; });
@@ -1121,14 +1154,14 @@
       });
     });
     const account = activeAccount();
-    const firstTint = wornItems.find(function (item) { return CSS.supports("color", item.color || ""); });
+    const firstTint = wornItems.find(function (item) { return colorToCss(item.color); });
     wearHistory.unshift({
       id: randomId(),
       time: Date.now(),
       date: new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }),
       itemNames: wornItems.map(function (item) { return item.name; }),
       icons: wornItems.map(iconForItem),
-      color: firstTint ? firstTint.color : "",
+      color: firstTint ? colorToCss(firstTint.color) : "",
       vibe: outfit.vibe || "",
       sharedWithFriends: account.shareDaily
     });
@@ -1155,7 +1188,8 @@
     document.getElementById("item-name").value = item ? item.name : "";
     document.getElementById("item-category").value = item ? item.category : CATEGORIES[0];
     document.getElementById("item-location").value = item ? item.location : "";
-    document.getElementById("item-color").value = item ? item.color : "#f6c9d5";
+    document.getElementById("item-color").value = item ? colorLabel(item.color) : "";
+    updateColorSwatch();
     document.getElementById("product-link").value = item ? item.productUrl || "" : "";
     document.getElementById("image-url").value = item && item.image && !item.image.startsWith("data:") ? item.image : "";
     if (currentImage) showPreview(currentImage);
@@ -1230,7 +1264,7 @@
       const imageUrl = validWebUrl(document.getElementById("image-url").value.trim(), "image");
       const category = document.getElementById("item-category").value;
       const location = document.getElementById("item-location").value.trim() || "Location not set";
-      const color = document.getElementById("item-color").value;
+      const color = document.getElementById("item-color").value.trim();
       const file = fileInput.files && fileInput.files[0];
       const finish = function (image) {
         const previous = items.find(function (item) { return item.id === editingId; });
@@ -1331,7 +1365,7 @@
         showNotice("This saved outfit doesn't have any pieces to share yet.", true);
         return;
       }
-      const firstTint = outfitItems.find(function (item) { return CSS.supports("color", item.color || ""); });
+      const firstTint = outfitItems.find(function (item) { return colorToCss(item.color); });
       const post = {
         id: randomId(),
         sourceOutfitId: outfit.id,
@@ -1339,7 +1373,7 @@
         caption: "A saved outfit from my closet, ready for another rewear.",
         pieces: outfitItems.map(function (item) { return item.name; }),
         icons: outfitItems.map(iconForItem),
-        color: firstTint ? firstTint.color : "#f6e8df",
+        color: firstTint ? colorToCss(firstTint.color) : "#f6e8df",
         likes: 0,
         shared: true
       };
@@ -1488,6 +1522,7 @@
   document.getElementById("close-dialog").addEventListener("click", function () { dialog.close(); });
   document.getElementById("cancel-dialog").addEventListener("click", function () { dialog.close(); });
   form.addEventListener("submit", handleItemSubmit);
+  document.getElementById("item-color").addEventListener("input", updateColorSwatch);
   fileInput.addEventListener("change", function () {
     const file = fileInput.files && fileInput.files[0];
     if (!file) return;
