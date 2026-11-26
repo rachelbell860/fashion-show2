@@ -50,6 +50,15 @@ Copy this block for each session.
 - **Limitations:** Community activity and pricing are simulations stored in the browser; this static prototype does not publish posts, process payments, or provide real accounts.
 - **Committed?** no
 
+### Session — 2026-11-25 — driver: project team
+
+- **Goal for this session:** Make laundry status apply automatically only to washable clothing without changing the existing design.
+- **Key prompts we gave Copilot** (paste the important ones):
+  1. Keep shoes and accessories clean and available after wearing outfits, allow manual cleaning flags, and update laundry and closet statistics.
+- **What worked:** Automatic wear tracking now dirties only tops, bottoms, dresses, and outerwear. Shoes, bags, hats, glasses, jewelry, and other accessories remain clean and generator-eligible after wear. Users can still manually mark any item as needing cleaning; laundry counts, closet statistics, and labels reflect that choice. Older saved accessory/footwear dirty states from automatic wear are corrected on load while explicitly manual flags are preserved.
+- **Tests performed:** `node --check app.js`, `node --check data.js`, and `git diff --check`; browserless functional smoke checks for legacy status migration, washable clothing auto-dirty behavior, accessory clean status, laundry/dashboard count updates, manual dirty/clean actions, and persisted washable flags. All passed.
+- **Committed?** no
+
 ### Session — [date] — driver: [first name]
 
 - **Goal for this session:**

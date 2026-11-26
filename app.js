@@ -9,7 +9,7 @@
   const PREFERENCES_KEY = "petalThreadStylePreferencesV1";
   const LIKES_KEY = "petalThreadCommunityLikesV1";
   const SHARED_OUTFITS_KEY = "petalThreadSharedOutfitsV1";
-  const WASHABLE = ["Tops", "Bottoms", "Dresses", "Jackets and outerwear", "Shoes", "Hats"];
+  const WASHABLE = ["Tops", "Bottoms", "Dresses", "Jackets and outerwear"];
   const SLOT_INFO = {
     dress: { label: "Dress", categories: ["Dresses"] },
     top: { label: "Top", categories: ["Tops"] },
@@ -61,8 +61,33 @@
     return [];
   }
 
+  function isWashableCategory(category) {
+    return WASHABLE.includes(category);
+  }
+
+  function normalizeWardrobe(wardrobe) {
+    return wardrobe.map(function (item) {
+      const washable = isWashableCategory(item.category);
+      const needsCleaning = !washable && item.status === "dirty" && item.statusSource !== "manual";
+      return Object.assign({}, item, {
+        washable: washable,
+        status: needsCleaning ? "clean" : item.status,
+        statusSource: needsCleaning ? "clean" : item.statusSource
+      });
+    });
+  }
+
   function profileStorageKey(key, profileId) {
     return key + ":" + encodeURIComponent(profileId);
+  }
+
+  function loadWardrobe(profileId) {
+    const key = profileStorageKey(ITEMS_KEY, profileId);
+    const stored = readStorage(key, emptyWardrobe());
+    if (!Array.isArray(stored)) return [];
+    const normalized = normalizeWardrobe(stored);
+    if (JSON.stringify(normalized) !== JSON.stringify(stored)) writeStorage(key, normalized);
+    return normalized;
   }
 
   let profiles = readStorage(PROFILES_KEY, null);
@@ -84,7 +109,7 @@
   let activeProfileId = readStorage(ACTIVE_PROFILE_KEY, profiles[0].id);
   if (!profiles.some(function (profile) { return profile.id === activeProfileId; })) activeProfileId = profiles[0].id;
 
-  let items = readStorage(profileStorageKey(ITEMS_KEY, activeProfileId), emptyWardrobe());
+  let items = loadWardrobe(activeProfileId);
   let savedOutfits = readStorage(profileStorageKey(OUTFITS_KEY, activeProfileId), []);
   let wearHistory = readStorage(profileStorageKey(HISTORY_KEY, activeProfileId), []);
   let stylePreferences = readStorage(profileStorageKey(PREFERENCES_KEY, activeProfileId), {});
@@ -167,7 +192,7 @@
     card.appendChild(makeVisual(item));
     const details = make("div", "item-details");
     const topLine = make("div", "item-topline");
-    topLine.append(make("span", "tag", item.category), make("span", "status-pill " + item.status, item.status === "dirty" ? "Laundry" : "Clean"));
+    topLine.append(make("span", "tag", item.category), make("span", "status-pill " + item.status, item.status === "dirty" ? "Needs cleaning" : "Clean"));
     details.append(topLine, make("h3", "", item.name));
     const location = make("p", "item-location");
     location.append(make("span", "", "⌖ "), document.createTextNode(item.location || "Location not set"));
@@ -180,7 +205,7 @@
       details.appendChild(productLink);
     }
     const actions = make("div", "card-actions");
-    actions.appendChild(createActionButton(item.status === "dirty" ? "Mark clean" : "Mark dirty", "toggle-clean", item.id, "mini-button"));
+    actions.appendChild(createActionButton(item.status === "dirty" ? "Mark clean" : "Mark needs cleaning", "toggle-clean", item.id, "mini-button"));
     if (context !== "laundry") {
       actions.append(
         createActionButton("Edit item", "edit-item", item.id, "mini-button edit-button"),
@@ -465,7 +490,7 @@
     if (!profile || profile.id === activeProfileId) return false;
     activeProfileId = profile.id;
     const persisted = writeStorage(ACTIVE_PROFILE_KEY, activeProfileId);
-    items = readStorage(profileStorageKey(ITEMS_KEY, activeProfileId), emptyWardrobe());
+    items = loadWardrobe(activeProfileId);
     savedOutfits = readStorage(profileStorageKey(OUTFITS_KEY, activeProfileId), []);
     wearHistory = readStorage(profileStorageKey(HISTORY_KEY, activeProfileId), []);
     stylePreferences = readStorage(profileStorageKey(PREFERENCES_KEY, activeProfileId), {});
@@ -683,7 +708,8 @@
       if (!wornIds.has(item.id)) return item;
       return Object.assign({}, item, {
         wearCount: (Number(item.wearCount) || 0) + 1,
-        status: item.washable ? "dirty" : item.status
+        status: isWashableCategory(item.category) ? "dirty" : item.status,
+        statusSource: isWashableCategory(item.category) ? "worn" : item.statusSource
       });
     });
     wearHistory.unshift({
@@ -801,7 +827,8 @@
           icon: previous ? previous.icon : "✿",
           vibes: previous ? previous.vibes || [] : [],
           status: previous ? previous.status : "clean",
-          washable: WASHABLE.indexOf(category) !== -1,
+          statusSource: previous ? previous.statusSource : "clean",
+          washable: isWashableCategory(category),
           image: image,
           productUrl: productUrl
         };
@@ -834,7 +861,12 @@
     const itemId = button.dataset.itemId;
     if (action === "toggle-clean") {
       items = items.map(function (item) {
-        return item.id === itemId ? Object.assign({}, item, { status: item.status === "dirty" ? "clean" : "dirty" }) : item;
+        if (item.id !== itemId) return item;
+        const status = item.status === "dirty" ? "clean" : "dirty";
+        return Object.assign({}, item, {
+          status: status,
+          statusSource: status === "dirty" ? "manual" : "clean"
+        });
       });
       const persisted = writeStorage(profileStorageKey(ITEMS_KEY, activeProfileId), items);
       reconcileCurrentOutfit();
@@ -982,7 +1014,9 @@
   });
   document.getElementById("profile-form").addEventListener("submit", createProfile);
   document.getElementById("clean-all").addEventListener("click", function () {
-    items = items.map(function (item) { return Object.assign({}, item, { status: "clean" }); });
+    items = items.map(function (item) {
+      return Object.assign({}, item, { status: "clean", statusSource: "clean" });
+    });
     const persisted = writeStorage(profileStorageKey(ITEMS_KEY, activeProfileId), items);
     reconcileCurrentOutfit();
     renderAll();
