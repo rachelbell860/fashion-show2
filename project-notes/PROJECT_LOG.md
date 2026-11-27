@@ -89,6 +89,19 @@ Copy this block for each session.
 - **Tests performed:** `node --check`, `git diff --check`, and a 16-step browserless test of typed names, capitals and extra spaces, two-word names, colour codes, unknown names, and editing older items. All passed.
 - **Committed?** yes — commit message: Let people type colour names when adding clothing
 
+### Session — 2026-11-27 — driver: Rachel
+
+- **Goal for this session:** Finish the project log, put all the new work on the live site, check everything against the rubric, and make the site easy for graders to try.
+- **Key prompts we gave the AI:**
+  1. "Fill out the project log, ask me questions if you have them."
+  2. "Read CLAUDE.md and the files in course-docs. Add course-docs to .gitignore so it never gets committed. Then commit and merge and push the site and project-notes changes. After that, check my site and project-notes against the rubric and tell me what's missing, most points first."
+  3. "Add the try the demo button to the sign in box."
+  4. "Let's take out the automatic pop up and just make the sign in button more obvious."
+- **What worked:** Filled in the log header, drivers, commit messages and the "things that broke" table. Merged the new work into `main` and pushed it, so the live site finally shows accounts, friends and colour names. Added a "Try the demo" button that opens a demo account with a 13-piece sample closet and two friends, so the outfit generator and friends feed work with one click. Replaced the automatic sign-in pop-up with a pink "Sign in / Join" button in the header and a welcome banner; the sign-in box now only opens when someone tries to save something.
+- **What broke, and how we fixed it:** The rubric check showed that the required sign-in pop-up we added on Nov 26 hid the whole site, including the home page pitch, until a visitor made an account. Graders have to understand the product within 30 seconds, and the rubric also takes points off for a login form that looks real. We added the demo button first, then removed the automatic pop-up so visitors can look around before signing in.
+- **Tests performed:** `node --check`, `git diff --check`, and a 33-step browserless test of browsing without an account, the Sign in button and banner, actions that ask for sign-in, closing the box, the demo account (closet, outfits, insights, laundry, friends feed), signing out, and creating a normal account. All passed. Checked that the live site rebuilt with the new version.
+- **Committed?** yes — commit messages: Fill in project log header, drivers, commits and colour session; Add things-that-broke rows and ignore course-docs; Log that the live site is now updated; Add Try the demo and replace sign-in pop-up with a Sign in button
+
 ### Session — [date] — driver: [first name]
 
 - **Goal for this session:**
