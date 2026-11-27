@@ -626,7 +626,9 @@
     const dailyGrid = document.getElementById("friends-feed-grid");
     dailyGrid.replaceChildren.apply(dailyGrid, daily.map(function (post) { return renderPostCard(post, "daily"); }));
     document.getElementById("friends-feed-empty").hidden = daily.length > 0;
-    document.getElementById("friends-feed-empty-text").textContent = friendIdsOf(activeProfileId).length
+    document.getElementById("friends-feed-empty-text").textContent = !isSignedIn()
+      ? "Sign in to add friends and see what they're wearing each day."
+      : friendIdsOf(activeProfileId).length
       ? "Your friends haven't shared any outfits yet. Check back after they get dressed!"
       : "Add friends to see what they're wearing each day.";
   }
@@ -802,14 +804,13 @@
   }
 
   // Opens the sign-in box. When nobody is signed in it can't be dismissed.
-  function openSignIn() {
+  // Opens the sign-in box. "reason" explains why, e.g. when someone tries to add clothing before signing in.
+  function openSignIn(reason) {
     const dialogBox = document.getElementById("profile-dialog");
-    const required = !isSignedIn();
     document.getElementById("profile-form").reset();
     document.getElementById("profile-error").hidden = true;
-    document.getElementById("close-profile-dialog").hidden = required;
-    document.getElementById("cancel-profile-dialog").hidden = required;
-    document.getElementById("profile-dialog-eyebrow").textContent = required ? "Welcome to Personal Fashion Show" : "Switch or add an account";
+    document.getElementById("profile-dialog-eyebrow").textContent = typeof reason === "string" ? reason
+      : isSignedIn() ? "Switch or add an account" : "Welcome to Personal Fashion Show";
     const unclaimed = profiles.filter(function (profile) { return !profile.email; });
     const claimSelect = document.getElementById("claim-profile");
     claimSelect.replaceChildren(new Option("Start a new, empty closet", ""));
@@ -817,6 +818,37 @@
     document.getElementById("claim-wrap").hidden = unclaimed.length === 0;
     if (!dialogBox.open) dialogBox.showModal();
     document.getElementById("signin-email").focus();
+  }
+
+  // Signs into a ready-made demo account with a sample closet and two fictional friends.
+  function startDemo() {
+    let demo = profiles.find(function (profile) { return profile.email === DEMO_EMAIL; });
+    let saved = true;
+    if (!demo) {
+      demo = normalizeAccount({ id: "demo-" + randomId(), name: "Demo shopper", email: DEMO_EMAIL, visibility: "public", shareDaily: true });
+      profiles.push(demo);
+      const closet = DEMO_CLOSET.map(function (item) {
+        return Object.assign({ status: "clean", statusSource: "clean" }, item);
+      });
+      saved = writeStorage(PROFILES_KEY, profiles) &&
+        writeStorage(profileStorageKey(ITEMS_KEY, demo.id), closet) &&
+        writeStorage(profileStorageKey(OUTFITS_KEY, demo.id), []) &&
+        writeStorage(profileStorageKey(HISTORY_KEY, demo.id), []) &&
+        writeStorage(profileStorageKey(PREFERENCES_KEY, demo.id), {}) &&
+        writeStorage(profileStorageKey(LIKES_KEY, demo.id), []) &&
+        writeStorage(profileStorageKey(SHARED_OUTFITS_KEY, demo.id), []);
+      DEMO_FRIEND_IDS.forEach(function (friendId) {
+        if (memberById(friendId) && !friendshipBetween(demo.id, friendId)) {
+          friendships.push({ id: randomId(), from: demo.id, to: friendId, status: "accepted", time: Date.now() });
+        }
+      });
+      saved = saveFriendships() && saved;
+    }
+    if (demo.id !== activeProfileId) switchProfile(demo.id, true);
+    document.getElementById("profile-dialog").close();
+    showNotice(saved
+      ? "You're in the demo account, with a sample closet and two friends. Try Outfit Generator or Feed, and sign out any time to make your own account."
+      : "The demo opened, but this browser couldn't save all of it. Check browser storage and try again.", !saved);
   }
 
   function signOut() {
@@ -1467,6 +1499,11 @@
   document.getElementById("generate-outfit").addEventListener("click", function () { generateOutfit(); });
   document.getElementById("home-add").addEventListener("click", function () { openDialog(null); });
   function saveStylePreferences() {
+    if (!isSignedIn()) {
+      renderStyleProfile();
+      openSignIn("Sign in or try the demo to save your style");
+      return;
+    }
     stylePreferences = {
       vibe: document.getElementById("preference-vibe").value,
       color: document.getElementById("preference-color").value.trim(),
@@ -1490,20 +1527,31 @@
   });
   document.getElementById("add-profile").addEventListener("click", openSignIn);
   document.getElementById("sign-out").addEventListener("click", signOut);
+  document.getElementById("try-demo").addEventListener("click", startDemo);
   document.getElementById("account-sign-out").addEventListener("click", signOut);
-  document.getElementById("profile-dialog").addEventListener("cancel", function (event) {
-    if (!isSignedIn()) event.preventDefault();
-  });
-  document.getElementById("profile-dialog").addEventListener("close", function () {
-    // Browsers can force-close a dialog (e.g. pressing Escape twice); reopen it if still signed out.
-    if (!isSignedIn()) openSignIn();
-  });
   document.getElementById("close-profile-dialog").addEventListener("click", function () {
-    if (isSignedIn()) document.getElementById("profile-dialog").close();
+    document.getElementById("profile-dialog").close();
   });
   document.getElementById("cancel-profile-dialog").addEventListener("click", function () {
-    if (isSignedIn()) document.getElementById("profile-dialog").close();
+    document.getElementById("profile-dialog").close();
   });
+  document.querySelectorAll("[data-sign-in]").forEach(function (button) {
+    button.addEventListener("click", function () { openSignIn(); });
+  });
+  document.querySelectorAll("[data-try-demo]").forEach(function (button) {
+    button.addEventListener("click", startDemo);
+  });
+  // Visitors can look around without an account; anything that saves data asks them to sign in first.
+  document.addEventListener("click", function (event) {
+    if (isSignedIn()) return;
+    const needsAccount = event.target.closest(
+      "[data-action], #open-add, #home-add, #wardrobe-add, [data-open-add], #generate-outfit, #clean-all, #find-friend-form button"
+    );
+    if (!needsAccount || needsAccount.closest("dialog")) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openSignIn("Sign in or try the demo to use your closet");
+  }, true);
   document.getElementById("profile-form").addEventListener("submit", signInOrCreate);
   document.getElementById("clean-all").addEventListener("click", function () {
     items = items.map(function (item) {
@@ -1560,6 +1608,5 @@
   updateSignedInState();
   renderAll();
   showView();
-  if (!isSignedIn()) openSignIn();
-  else if (items.length) generateOutfit();
+  if (isSignedIn() && items.length) generateOutfit();
 })();

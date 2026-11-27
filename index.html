@@ -19,6 +19,7 @@
       <select id="profile-select" aria-label="Signed in as"></select>
       <button class="profile-add" id="add-profile" type="button" aria-label="Switch or add an account">＋</button>
       <button class="sign-out-button" id="sign-out" type="button">Sign out</button>
+      <button class="sign-in-button" id="sign-in" type="button" data-sign-in><span aria-hidden="true">♡</span> Sign in / Join</button>
     </div>
     <nav aria-label="Main navigation">
       <a href="#home">Home</a>
@@ -43,6 +44,13 @@
   <div class="notice" id="app-notice" role="status" aria-live="polite" hidden></div>
 
   <main>
+    <div class="signed-out-banner" id="signed-out-banner">
+      <p><strong>Welcome!</strong> You're looking around without an account. Sign in to save your own closet and add friends, or try the demo with a sample closet.</p>
+      <div class="banner-actions">
+        <button class="button button-small" type="button" data-sign-in>Sign in / Join</button>
+        <button class="button button-soft button-small" type="button" data-try-demo>Try the demo →</button>
+      </div>
+    </div>
     <section id="home" data-view>
       <div class="hero">
         <div class="hero-copy">
@@ -195,6 +203,14 @@
         <a class="button button-soft" href="#community">Open the feed</a>
       </div>
       <div class="simulation-banner"><span aria-hidden="true">✦</span><p><strong>Prototype simulation:</strong> Accounts, emails, and friendships are saved only in this browser. There are no passwords and nothing is sent. Use a made-up email such as <em>yourname@example.com</em>. Fictional members accept requests right away; to try a real request, create a second account with ＋ and switch between them.</p></div>
+      <div class="friends-signed-out" id="friends-signed-out">
+        <h2>Sign in to add friends</h2>
+        <p class="muted">Make an account to choose public or private, add friends by email, and see their day-to-day outfits.</p>
+        <div class="banner-actions">
+          <button class="button" type="button" data-sign-in>Sign in / Join</button>
+          <button class="button button-soft" type="button" data-try-demo>Try the demo →</button>
+        </div>
+      </div>
       <div class="friends-layout">
         <form class="friends-card account-card" id="account-form" novalidate>
           <p class="eyebrow">Your account</p>
@@ -348,6 +364,11 @@
         <div><p class="eyebrow" id="profile-dialog-eyebrow">A closet of your own</p><h2 id="profile-dialog-title">Sign in or join</h2></div>
         <button class="icon-button" id="close-profile-dialog" type="button" aria-label="Close">×</button>
       </div>
+      <div class="demo-callout">
+        <p><strong>Just looking around?</strong> Jump in with a sample closet and friends. No email needed.</p>
+        <button class="button" id="try-demo" type="button">Try the demo →</button>
+      </div>
+      <p class="or-divider"><span>or use your own account</span></p>
       <label for="signin-email">Email<input id="signin-email" name="email" type="email" required maxlength="80" placeholder="yourname@example.com" autocomplete="off"></label>
       <p class="field-help">Already have an account on this browser? Just enter its email to switch to it.</p>
       <label for="claim-profile" id="claim-wrap" hidden>Closet for a new account<select id="claim-profile"></select><span class="field-help">This browser has a closet saved from before accounts. Keep it to link it to your email.</span></label>

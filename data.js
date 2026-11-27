@@ -68,6 +68,26 @@ const COLOR_NAMES = {
   "gold": "#d4af37"
 };
 
+// Sample closet for the "Try the demo" account, so visitors can make outfits right away.
+const DEMO_EMAIL = "demo@example.com";
+const DEMO_CLOSET = [
+  { id: "demo-1", name: "Cream cable-knit sweater", category: "Tops", location: "Second dresser drawer", color: "Cream", icon: "👚", vibes: ["cozy", "casual"], wearCount: 6 },
+  { id: "demo-2", name: "Striped boat-neck tee", category: "Tops", location: "First dresser drawer", color: "Navy", icon: "👚", vibes: ["casual", "weekend"], wearCount: 4 },
+  { id: "demo-3", name: "Blush silk blouse", category: "Tops", location: "Hanging in closet", color: "Blush pink", icon: "👚", vibes: ["romantic", "polished"], wearCount: 2 },
+  { id: "demo-4", name: "Straight-leg jeans", category: "Bottoms", location: "Closet shelf", color: "Denim", icon: "👖", vibes: ["casual", "weekend"], wearCount: 9 },
+  { id: "demo-5", name: "Black wide-leg trousers", category: "Bottoms", location: "Hanging in closet", color: "Black", icon: "👖", vibes: ["polished"], wearCount: 3 },
+  { id: "demo-6", name: "Sage midi skirt", category: "Bottoms", location: "Hanging in closet", color: "Sage green", icon: "🩱", vibes: ["romantic", "weekend"], wearCount: 1 },
+  { id: "demo-7", name: "Lilac floral sundress", category: "Dresses", location: "Hanging in closet", color: "Lilac", icon: "👗", vibes: ["romantic", "weekend"], wearCount: 2 },
+  { id: "demo-8", name: "Camel wool coat", category: "Jackets and outerwear", location: "Hanging in closet", color: "Camel", icon: "🧥", vibes: ["polished", "cozy"], wearCount: 5 },
+  { id: "demo-9", name: "Denim jacket", category: "Jackets and outerwear", location: "Hanging in closet", color: "Denim", icon: "🧥", vibes: ["casual", "weekend"], wearCount: 0 },
+  { id: "demo-10", name: "White canvas sneakers", category: "Shoes", location: "Shoe rack", color: "White", icon: "👟", vibes: ["casual", "weekend"], wearCount: 11 },
+  { id: "demo-11", name: "Brown ankle boots", category: "Shoes", location: "Shoe rack", color: "Brown", icon: "👢", vibes: ["cozy", "polished"], wearCount: 4 },
+  { id: "demo-12", name: "Tan leather tote", category: "Bags", location: "Closet shelf", color: "Warm tan", icon: "👜", vibes: ["polished", "casual"], wearCount: 7 },
+  { id: "demo-13", name: "Gold hoop earrings", category: "Jewelry", location: "First dresser drawer", color: "Gold", icon: "✨", vibes: ["polished", "romantic"], wearCount: 8 }
+];
+// Fictional members the demo account starts out friends with, so the friends feed isn't empty.
+const DEMO_FRIEND_IDS = ["member-maya", "member-noor"];
+
 // Fictional community members. Emails use example.com so no real address is ever stored.
 // Public members' shared looks appear for everyone; private members' looks only appear for friends.
 // "dailyOutfits" are what each member actually wore — only their friends can see these.
