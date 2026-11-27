@@ -106,7 +106,7 @@ Copy this block for each session.
 | Date | What went wrong | What we tried | What finally fixed it |
 |---|---|---|---|
 | 2026-11-26 | Colour names from the suggestion list (like "Blush pink") didn't change the item's colour. Those items all got the default pink, so people had to type a colour code instead. | Checked how the colour was used and found the browser only understands a few built-in colour names and codes, not names like "Blush pink" or "Sage green". | Added our own list of about 50 colour names so typed names give the right tint, plus a swatch that previews the colour while typing. |
-| 2026-11-27 | The live site didn't show our new features (accounts, friends, colour names). | Checked GitHub and found our commits were saved only in the workspace and never uploaded, and the newest work was on a separate branch instead of `main`, which the live site is built from. | Not fixed yet. Next step: merge the branch into `main` and upload (push) it to GitHub. |
+| 2026-11-27 | The live site didn't show our new features (accounts, friends, colour names). | Checked GitHub and found our commits were saved only in the workspace and never uploaded, and the newest work was on a separate branch instead of `main`, which the live site is built from. | On 2026-11-27 we merged the branch into `main` and pushed it to GitHub. The live site rebuilt within a few minutes and now shows the new features. |
 
 ## What a real version would need
 
