@@ -118,6 +118,9 @@ Copy this block for each session.
 
 | Date | What went wrong | What we tried | What finally fixed it |
 |---|---|---|---|
+| 2026-11-25 | Clothing images would not automatically import from retailer links. | Tried extracting images directly from product links. | Added manual photo uploads and direct image URLs as alternatives. |
+| 2026-11-25 | The website could not isolate clothing items from photographs containing models. | Explored automatic image and background removal. | Used individual product photographs instead. |
+| 2026-11-25 | Shoes were being marked as dirty after an outfit was worn. | Requested changes to the laundry system's category rules. | Removed shoes and accessories from automatic laundry tracking, so only tops, bottoms, dresses and outerwear are marked dirty when an outfit is worn. Fixed and committed on 2026-11-26. |
 | 2026-11-26 | Colour names from the suggestion list (like "Blush pink") didn't change the item's colour. Those items all got the default pink, so people had to type a colour code instead. | Checked how the colour was used and found the browser only understands a few built-in colour names and codes, not names like "Blush pink" or "Sage green". | Added our own list of about 50 colour names so typed names give the right tint, plus a swatch that previews the colour while typing. |
 | 2026-11-27 | The live site didn't show our new features (accounts, friends, colour names). | Checked GitHub and found our commits were saved only in the workspace and never uploaded, and the newest work was on a separate branch instead of `main`, which the live site is built from. | On 2026-11-27 we merged the branch into `main` and pushed it to GitHub. The live site rebuilt within a few minutes and now shows the new features. |
 
@@ -127,11 +130,17 @@ Everything we wanted but faked or left out — real logins, a real database, pay
 
 | Feature we faked or skipped | Why a real company would need it | How hard / expensive? |
 |---|---|---|
-| Real email accounts and login | Accounts are stored in one browser with no password, so anyone on the device can open them and nothing syncs between phone and laptop. A real version needs sign-up with email verification, passwords or login links, and password reset. | Medium. A hosted login service (for example Firebase Auth or Auth0) is free to low-cost at small scale, plus a few weeks of developer time. |
-| Shared database for friends and feeds | Friends must see each other's outfits from their own devices. That needs a server database that stores friendships and posts and enforces who can see what (public vs. private, friends only). | Medium to high. Hosting is cheap early on (tens of dollars a month), but privacy rules need careful building and testing. |
-| Privacy, safety and moderation | Private daily outfits are personal. A real app needs privacy-law compliance (e.g. PIPEDA in Canada), blocking and reporting, account deletion, and moderation of public posts. | High. Ongoing legal advice and staff or paid moderation tools. |
-| Friend invites by email | When a friend hasn't joined, the prototype just says so. A real version would send them an invite email. | Low to medium. An email service costs a few dollars a month, plus spam and consent rules. |
-| Photo storage for outfit posts | Posts currently show emoji icons. Real users would want photos, which need cloud storage and image processing. | Medium. Storage costs grow with users. |
+| Real user accounts | Allow users to securely log in and access their personal wardrobes. | Moderate. Authentication services can initially be free or low-cost. |
+| Cloud database | Permanently store clothing, images, preferences and saved outfits. | Moderate. Approximately $0–$50/month initially. |
+| Cross-device synchronization | Allow users to access their wardrobe from their phone, tablet or computer. | Moderate. Requires user accounts and a cloud database. |
+| Automatic retailer image importing | Make adding clothing faster and more convenient. | High. Retailer restrictions and API access could make this expensive. |
+| AI background and model removal | Create clean images of individual clothing items without distracting backgrounds or models. | High. Would require specialized AI technology or image-processing services. |
+| Real community features | Allow users to share outfits, like posts and interact with other users. | Moderate to high. Requires a database and backend infrastructure. |
+| Payment processing | Allow users to purchase premium subscriptions. | Moderate. Payment providers typically charge a fee per transaction. |
+| Security and privacy | Protect users' personal information, passwords and uploaded photographs. | High. Requires ongoing maintenance and security monitoring. |
+| Community moderation | Prevent inappropriate content, spam and harmful interactions. | Moderate to high. May require automated moderation and paid staff as the platform grows. |
+| Mobile app | Make it easier for users to photograph clothing and plan outfits on the go. | High. Could cost thousands of dollars to develop professionally. |
+| Ongoing maintenance and staff | Fix bugs, support customers and introduce new features. | High. Ongoing costs would increase as the business grows. |
 
 ## Reflection (fill in at the end)
 
