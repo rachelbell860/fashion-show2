@@ -93,3 +93,7 @@ What could go wrong — for your customers, their data, or society? What would y
 **Social comparison and body image:** Sharing outfits could lead users to compare themselves to others or feel pressure to look perfect, which goes against the purpose of Personal Fashion Show. The platform would encourage everyday outfits, outfit repeating and creativity, and a friends-only feed would reduce the pressure of sharing with strangers.
 
 **Inappropriate content and harassment:** Community features could lead to negative comments, bullying or inappropriate photo sharing. Users could report content, block accounts and control who sees their posts. Clear community guidelines and moderation would help users feel comfortable expressing their personal style.
+
+---
+
+**AI use:** I used Claude to brainstorm, point out weak spots in my drafts against the rubric, line-edit my sections for clarity and length, and help organize my ideas into sections 3 and 4 (including restructuring section 4 into a VRIN test for each resource). I used Claude Code to fix Markdown formatting and commit my work. The business idea, examples and reasoning are my own.

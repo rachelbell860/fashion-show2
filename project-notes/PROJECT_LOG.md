@@ -144,6 +144,16 @@ Everything we wanted but faked or left out — real logins, a real database, pay
 
 ## Reflection (fill in at the end)
 
-1. What surprised you most about building software with AI?
-2. Which parts were easy, and which were hard? Why do you think that is?
-3. If a competitor had the same AI tool, how long would it take them to copy your site?
+**1. What surprised you most about building software with AI?**
+
+What surprised me most was how quickly I could turn an idea into a functioning website without having much coding experience. I could describe what I wanted in everyday language, and AI would generate the code for me. However, I was also surprised by how often adding a new feature could cause problems elsewhere. I learned that building software with AI still requires patience, problem-solving, testing and clear communication.
+
+**2. Which parts were easy, and which were hard? Why do you think that is?**
+
+The easiest parts were designing the website, changing its appearance and adding basic features such as buttons, clothing categories and navigation. It was easy to describe how I wanted something to look and have AI make those changes.
+
+The hardest parts were getting more complex features to work, such as automatically importing clothing images from retailer websites, removing models from photos and making sure the laundry system worked correctly. I also struggled with publishing the website and troubleshooting errors because I was unfamiliar with GitHub. I think these tasks were harder because they involved technical limitations and required multiple parts of the website to work together. I learned that being specific with my prompts made a big difference.
+
+**3. If a competitor had the same AI tool, how long would it take them to copy your site?**
+
+I think a competitor with the same AI tools could recreate most of my website within a weekend, especially if they could see my existing design and features. This made me realize that the website itself is not a strong competitive advantage. The real value would come from the community, customer loyalty, wardrobe data and personalization that develop over time. A competitor could copy my website quickly, but building an active community and gaining the same understanding of customers could take months or even years.
