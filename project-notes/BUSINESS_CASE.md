@@ -69,9 +69,24 @@ If a large fashion or social media platform added a digital wardrobe feature, it
 These advantages strengthen over time. A student who has uploaded 100 clothing items, saved months of outfits and connected with her friends would have little reason to switch, because she would need to rebuild her digital wardrobe and social connections. However, all of this depends on building an active, loyal customer base. The current prototype demonstrates the potential for a competitive moat rather than an established one.
 
 ## 5. Cloud and operations
+Personal Fashion Show is currently hosted on GitHub Pages, with user information stored in the browser. A real version would need cloud services for secure accounts, data storage, payments and social interactions.
 
+SaaS (Software as a Service): Personal Fashion Show would use existing services for secure logins, subscription payments and customer support, saving development time and money. However, payment providers charge transaction fees, which the company would need to factor into subscription pricing.
+
+PaaS (Platform as a Service): A managed cloud platform would run the backend, database and image storage without the company maintaining its own servers. Storage costs could rise as users upload clothing photos, so image compression and spending alerts would help control expenses. Regular backups, standard technologies and data exports would reduce the risk of vendor lock-in.
+
+IaaS (Infrastructure as a Service): Personal Fashion Show would not use IaaS initially, because managing virtual servers would require more technical knowledge, time and staff.
+
+Operational risks: During an outage, the company would notify users and work with its cloud provider to restore service. Encryption, secure access controls and regular security updates would help protect customer information.
+
+As the business grows, it would also need staff for technical maintenance, customer support and community moderation, as outlined in the project log's "What a real version would need" table.
 What would it take to run this for real? Which parts would you buy as cloud services (SaaS, PaaS, IaaS), and what are the risks of relying on them?
 
 ## 6. Risks and ethics
 
 What could go wrong — for your customers, their data, or society? What would you do about it?
+Privacy and data security: Personal Fashion Show would collect personal information, clothing photos and wearing habits. If this information were leaked, users could face unwanted attention or harassment, or have details of their daily routines exposed. Accounts would be private by default, and users would control what they share. The company would collect only necessary information and let users permanently delete their accounts and data.
+
+Social comparison and body image: Sharing outfits could lead users to compare themselves to others or feel pressure to look perfect, which goes against the purpose of Personal Fashion Show. The platform would encourage everyday outfits, outfit repeating and creativity, and a friends-only feed would reduce the pressure of sharing with strangers.
+
+Inappropriate content and harassment: Community features could lead to negative comments, bullying or inappropriate photo sharing. Users could report content, block accounts and control who sees their posts. Clear community guidelines and moderation would help users feel comfortable expressing their personal style.
