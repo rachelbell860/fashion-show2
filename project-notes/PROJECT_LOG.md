@@ -102,15 +102,18 @@ Copy this block for each session.
 - **Tests performed:** `node --check`, `git diff --check`, and a 33-step browserless test of browsing without an account, the Sign in button and banner, actions that ask for sign-in, closing the box, the demo account (closet, outfits, insights, laundry, friends feed), signing out, and creating a normal account. All passed. Checked that the live site rebuilt with the new version.
 - **Committed?** yes — commit messages: Fill in project log header, drivers, commits and colour session; Add things-that-broke rows and ignore course-docs; Log that the live site is now updated; Add Try the demo and replace sign-in pop-up with a Sign in button
 
-### Session — [date] — driver: [first name]
+### Session — 2026-11-27 (evening) — driver: Rachel
 
-- **Goal for this session:**
-- **Key prompts we gave Copilot** (paste the important ones):
-  1.
-  2.
-- **What worked:**
-- **What broke, and how we fixed it:**
-- **Committed?** yes / no — commit message:
+- **Goal for this session:** Finish the business case (sections 5 and 6), add the AI-use line, write the reflection, and get everything on GitHub before the deadline.
+- **Key prompts we gave the AI:**
+  1. "Save what I just added to the business case."
+  2. "Can you fix those things for me" (the layout problems in sections 5 and 6).
+  3. "Is the log entry the only thing I still need to do?"
+  4. "Add this for the AI-use …" (my AI-use line) and "add this to the log" (my reflection).
+  5. "Fill in today's session entry in the log."
+- **What worked:** I wrote sections 5 (Cloud and operations) and 6 (Risks and ethics) myself, and the AI committed them. It then fixed the Markdown layout: the section 5 prompt question had ended up after my answer, there was a missing blank line in section 6, and it made the labels bold to match section 2. It checked my work against the rubric and found that the reflection and the required AI-use line were still missing. I wrote both, and the AI added them to the files. It also confirmed that the business case is about 1,500 words (not counting the template questions) and that the live site loads.
+- **What broke, and how we fixed it:** The AI first told me the deadline had passed, because its clock was set to UTC, where it was already Saturday. I pointed out that it was still Friday. It checked Atlantic time (8:42 pm) and we kept going.
+- **Committed?** yes — commit messages: Draft business case sections 5 and 6; Fix Markdown formatting in business case sections 5 and 6; Add AI-use line to business case and reflection to project log; Add Nov 27 evening session to project log
 
 ---
 
